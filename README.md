@@ -24,7 +24,7 @@ SistemaLogistico/
 ## 2. Requisitos y Compilación
 
 ### Requisitos
-- Compilador **g++** (GCC 9 o superior) o **clang++** con soporte para **C++17**.
+- Compilador **g++** (GCC 9) o **clang++** con soporte para **C++17**.
 - Terminal en Linux, macOS o Windows (MinGW / MSYS2 / WSL).
 
 ### Comando de Compilación (Linux / macOS / MinGW)
