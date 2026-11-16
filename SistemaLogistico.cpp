@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cctype>
 #include <cstdlib>
+#include <cmath>
 
 SistemaLogistico::SistemaLogistico()
     : tablaHash(15013), heapDespacho(16384), arbolCronologico(),
@@ -44,18 +45,41 @@ bool SistemaLogistico::validarDNI(const std::string& dni) const {
 }
 
 bool SistemaLogistico::validarFecha(const std::string& fecha) const {
-    // Formato estricto YYYY-MM-DD
+    // 1. Verificar el formato YYYY-MM-DD.
     if (fecha.length() != 10) return false;
     if (fecha[4] != '-' || fecha[7] != '-') return false;
+
     for (int i = 0; i < 10; ++i) {
         if (i == 4 || i == 7) continue;
-        if (!std::isdigit(static_cast<unsigned char>(fecha[i]))) return false;
+
+        if (!std::isdigit(static_cast<unsigned char>(fecha[i]))) {
+            return false;
+        }
     }
+
+    // 2. Extraer los componentes de la fecha.
+    int anio = std::stoi(fecha.substr(0, 4));
     int mes = std::stoi(fecha.substr(5, 2));
     int dia = std::stoi(fecha.substr(8, 2));
-    if (mes < 1 || mes > 12) return false;
-    if (dia < 1 || dia > 31) return false;
-    return true;
+
+    if (anio < 1 || mes < 1 || mes > 12) return false;
+
+    // 3. Cantidad de dias de cada mes en un año no bisiesto.
+    int diasPorMes[12] = {
+        31, 28, 31, 30, 31, 30,
+        31, 31, 30, 31, 30, 31
+    };
+
+    // 4. Ajustar febrero si el año es bisiesto.
+    bool esBisiesto = (anio % 400 == 0) ||
+                     (anio % 4 == 0 && anio % 100 != 0);
+
+    if (esBisiesto) {
+        diasPorMes[1] = 29;
+    }
+
+    // 5. Comprobar que el dia exista dentro de ese mes.
+    return dia >= 1 && dia <= diasPorMes[mes - 1];
 }
 
 bool SistemaLogistico::validarHora(const std::string& hora) const {
@@ -118,13 +142,27 @@ bool SistemaLogistico::parsearLineaCSV(const std::string& linea,
     }
 
     try {
-        prioridad = std::stoi(campoPrioridad);
-        monto = std::stod(campoMonto);
+        std::size_t posPrioridad = 0;
+        std::size_t posMonto = 0;
+
+        prioridad = std::stoi(campoPrioridad, &posPrioridad);
+        monto = std::stod(campoMonto, &posMonto);
+
+        // Rechazar campos que tengan caracteres sobrantes.
+        if (posPrioridad != campoPrioridad.length() ||
+            posMonto != campoMonto.length()) {
+            return false;
+        }
     } catch (...) {
         return false;
     }
 
-    if (prioridad < 1 || monto < 0.0) return false;
+    // La prioridad debe ser positiva.
+    if (prioridad < 1) return false;
+
+    // El monto debe ser finito y no negativo.
+    if (!std::isfinite(monto) || monto < 0.0) return false;
+
     return true;
 }
 
@@ -234,8 +272,8 @@ bool SistemaLogistico::registrarPedido(const std::string& idPedido,
         mensajeError = "El nivel de prioridad debe ser un entero positivo (>= 1).";
         return false;
     }
-    if (montoDolares < 0.0) {
-        mensajeError = "El monto en dolares no puede ser negativo.";
+    if (!std::isfinite(montoDolares) || montoDolares < 0.0) {
+        mensajeError = "El monto debe ser un numero finito y no negativo.";
         return false;
     }
     if (!validarFecha(fec)) {
@@ -417,14 +455,15 @@ void SistemaLogistico::mostrarEstadisticasGenerales() const {
     std::cout << "======================================================\n";
     std::cout << "  Total de pedidos activos en sistema : " << totalPedidos << "\n";
     std::cout << "  Pedidos pendientes de despacho      : " << heapDespacho.obtenerTamano() << "\n";
-    std::cout << "  Pedidos en transito / gestionados   : " << (totalPedidos - heapDespacho.obtenerTamano()) << "\n";
+    std::cout << "  Pedidos fuera de cola de despacho  : " << (totalPedidos - heapDespacho.obtenerTamano()) << "\n";
     std::cout << "  Monto total acumulado (USD)         : $" << std::fixed << std::setprecision(2) << montoTotalAcumulado << "\n";
     std::cout << "  ------------------------------------------------------\n";
     std::cout << "  [Diagnostico Estructuras]\n";
     std::cout << "  Tabla Hash -> Capacidad: " << tablaHash.obtenerCapacidad()
-              << " | Factor carga: " << std::setprecision(3) << tablaHash.obtenerFactorCarga()
-              << " | Colisiones: " << tablaHash.obtenerColisionesTotales()
-              << " | Max cadena: " << tablaHash.obtenerLongitudMaximaCadena() << "\n";
+            << " | Factor carga: " << std::setprecision(3)
+            << tablaHash.obtenerFactorCarga()
+            << " | Colisiones: " << tablaHash.obtenerColisionesTotales()
+            << "\n";
     std::cout << "  Arbol AVL  -> Nodos: " << arbolCronologico.obtenerCantidadNodos()
               << " | Altura: " << arbolCronologico.obtenerAlturaArbol() << "\n";
     std::cout << "  Min-Heap   -> Elementos pendientes: " << heapDespacho.obtenerTamano() << "\n";
@@ -456,7 +495,7 @@ void SistemaLogistico::ejecutarPruebasRendimiento(const std::string& rutaCSV) {
     double msInicio = std::chrono::duration<double, std::milli>(t1 - t0).count();
 
     t0 = std::chrono::high_resolution_clock::now();
-    Pedido* pFinal = buscarPedidoPorID("PD-010000");
+    Pedido* pFinal = buscarPedidoPorID("PD-010500");
     t1 = std::chrono::high_resolution_clock::now();
     double msFinal = std::chrono::duration<double, std::milli>(t1 - t0).count();
 
@@ -467,7 +506,7 @@ void SistemaLogistico::ejecutarPruebasRendimiento(const std::string& rutaCSV) {
 
     std::cout << "[2] Busqueda Hash:\n"
               << "    - Inicio (PD-000001)     : " << (pInicio ? "ENCONTRADO" : "NO") << " en " << msInicio << " ms\n"
-              << "    - Final  (PD-010000)     : " << (pFinal ? "ENCONTRADO" : "NO") << " en " << msFinal << " ms\n"
+              << "    - Final  (PD-010500)     : " << (pFinal ? "ENCONTRADO" : "NO") << " en " << msFinal << " ms\n"
               << "    - Inexistente (PD-999999): " << (pInexistente ? "ENCONTRADO" : "NO EXISTE") << " en " << msInexistente << " ms\n";
 
     // 3. Prueba de Despacho (Min-Heap): 10 pedidos más urgentes (y prueba de 100 pedidos para tabla IEEE)
@@ -547,6 +586,54 @@ void SistemaLogistico::ejecutarPruebasRendimiento(const std::string& rutaCSV) {
     double msEliminacion = std::chrono::duration<double, std::milli>(t1 - t0).count();
     std::cout << "[7] Cancelacion y Eliminacion de " << eliminados << " pedidos: " << msEliminacion << " ms\n";
 
+
+        // Verificaciones posteriores, fuera de los tiempos medidos.
+    int estadosCorrectos = 0;
+
+    for (int i = 500; i < 510; ++i) {
+        std::ostringstream id;
+        id << "PD-" << std::setw(6) << std::setfill('0') << i;
+
+        Pedido* pedido = buscarPedidoPorID(id.str());
+
+        if (pedido != nullptr && pedido->getEstado() == "Entregado") {
+            estadosCorrectos++;
+        } else {
+            std::cout << "[FALLO] Estado incorrecto o pedido ausente: "
+                    << id.str() << "\n";
+        }
+    }
+
+    int ausentesEnHash = 0;
+
+    for (int i = 600; i < 610; ++i) {
+        std::ostringstream id;
+        id << "PD-" << std::setw(6) << std::setfill('0') << i;
+
+        if (buscarPedidoPorID(id.str()) == nullptr) {
+            ausentesEnHash++;
+        } else {
+            std::cout << "[FALLO] El pedido sigue en la tabla hash: "
+                    << id.str() << "\n";
+        }
+    }
+
+    std::cout << "\n[Verificacion posterior]\n";
+    std::cout << "  Pedidos con estado Entregado: "
+            << estadosCorrectos << "/10\n";
+    std::cout << "  Pedidos eliminados ausentes en Hash: "
+            << ausentesEnHash << "/10\n";
+
+    bool actualizacionCorrecta =
+        (actualizados == 10 && estadosCorrectos == 10);
+
+    bool eliminacionCorrecta =
+        (eliminados == 10 && ausentesEnHash == 10);
+
+    std::cout << "  Actualizacion: "
+            << (actualizacionCorrecta ? "OK" : "FALLO") << "\n";
+    std::cout << "  Eliminacion en Hash: "
+            << (eliminacionCorrecta ? "OK" : "FALLO") << "\n";
     // 8. Prueba de Consulta Ordenada In-Order (30 primeros)
     std::cout << "\n[8] Consulta Ordenada In-Order (Top 30 cronologico):\n";
     t0 = std::chrono::high_resolution_clock::now();

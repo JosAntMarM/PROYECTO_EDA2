@@ -103,7 +103,14 @@ int main() {
                     limpiarBufferEntrada();
                     break;
                 }
-                limpiarBufferEntrada();
+
+                std::string restoMonto;
+                std::getline(std::cin, restoMonto);
+
+                if (restoMonto.find_first_not_of(" \t\r") != std::string::npos) {
+                    std::cout << "[Error] El monto no debe contener letras ni otros caracteres.\n";
+                    break;
+                }
 
                 std::cout << "Fecha (YYYY-MM-DD): ";
                 std::getline(std::cin, fecha);
@@ -111,7 +118,7 @@ int main() {
                 std::cout << "Hora (HH:MM:SS): ";
                 std::getline(std::cin, hora);
 
-                std::cout << "Estado inicial (Pendiente / Iniciado): ";
+                std::cout << "Estado inicial (Pendiente = listo para despacho / Iniciado = en preparacion): ";
                 std::getline(std::cin, estado);
 
                 std::string error;
@@ -121,7 +128,7 @@ int main() {
                 double ms = std::chrono::duration<double, std::milli>(fin - inicio).count();
 
                 if (ok) {
-                    std::cout << "[Exito] Pedido registrado en las 3 estructuras en "
+                    std::cout << "[Exito] Pedido registrado correctamente en "
                               << std::fixed << std::setprecision(4) << ms << " ms.\n";
                 } else {
                     std::cout << "[Error] " << error << "\n";
