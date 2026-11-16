@@ -23,7 +23,7 @@ void mostrarMenu() {
     std::cout << "  7. Actualizar estado de pedido\n";
     std::cout << "  8. Cancelar pedido\n";
     std::cout << "  9. Mostrar estadisticas generales\n";
-    std::cout << " 10. Ejecutar suite de pruebas y rendimiento (Benchmark PDF)\n";
+    std::cout << " 10. Ejecutar suite de pruebas y rendimiento\n";
     std::cout << " 11. Salir\n";
     std::cout << "==========================================================\n";
     std::cout << "Seleccione una opcion: ";
@@ -182,7 +182,7 @@ int main() {
             }
 
             case 5: {
-                std::cout << "\n--- CONSULTA CRONOLOGICA IN-ORDER (PRIMEROS 30) ---\n";
+                std::cout << "\n--- CONSULTA CRONOLOGICA (PRIMEROS 30) ---\n";
                 auto inicio = std::chrono::high_resolution_clock::now();
                 sistema.consultarOrdenadosPorFecha(30);
                 auto fin = std::chrono::high_resolution_clock::now();

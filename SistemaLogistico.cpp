@@ -471,9 +471,9 @@ void SistemaLogistico::mostrarEstadisticasGenerales() const {
 }
 
 void SistemaLogistico::ejecutarPruebasRendimiento(const std::string& rutaCSV) {
-    std::cout << "\n====================================================================\n";
-    std::cout << "   SUITE DE PRUEBAS DE RENDIMIENTO Y SUSTENTACION (BENCHMARK PDF)   \n";
-    std::cout << "====================================================================\n";
+    std::cout << "\n==================================================\n";
+    std::cout << "   SUITE DE PRUEBAS DE RENDIMIENTO Y SUSTENTACION   \n";
+    std::cout << "====================================================\n";
 
     int omitidos = 0;
     double tCarga = 0.0;
