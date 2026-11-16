@@ -62,4 +62,4 @@ g++ -std=c++17 -g -fsanitize=address,leak main.cpp Pedido.cpp TablaHash.cpp Heap
 7. **Opción 7 (Actualizar estado):** Modifica el estado de un pedido y sincroniza automáticamente el Min-Heap si deja de estar `Pendiente`.
 8. **Opción 8 (Cancelar pedido):** Elimina el pedido de la Tabla Hash, Árbol AVL y Min-Heap, liberando su memoria dinámica sin referencias colgantes.
 9. **Opción 9 (Estadísticas generales):** Muestra totales globales en `O(1)` y métricas internas de colisiones y altura del AVL.
-10. **Opción 10 (Benchmark PDF):** Ejecuta automáticamente todos los escenarios de prueba exigidos en la guía del proyecto midiendo tiempos con `std::chrono`.
+10. **Opción 10:** Ejecuta automáticamente todos los escenarios de prueba exigidos en la guía del proyecto midiendo tiempos con `std::chrono`.
